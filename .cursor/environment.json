@@ -1,0 +1,21 @@
+{
+  "name": "Adobe Spectrum demo",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "corepack enable && yarn install --immutable",
+  "terminals": [
+    {
+      "name": "storybook",
+      "command": "yarn start:1st-gen",
+      "description": "Builds Spectrum Web Components and serves the first-generation Storybook on port 8080."
+    }
+  ],
+  "ports": [
+    {
+      "name": "Spectrum Storybook",
+      "port": 8080
+    }
+  ]
+}
