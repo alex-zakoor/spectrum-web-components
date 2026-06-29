@@ -241,6 +241,49 @@ describe('Menu', () => {
     expect(el.getAttribute('role')).to.equal('menu');
   });
 
+  it('skips hidden items during initial focus and keyboard navigation', async () => {
+    const el = await fixture<Menu>(html`
+      <sp-menu selects="single">
+        <sp-menu-item hidden selected>Hidden selected</sp-menu-item>
+        <sp-menu-item id="first-visible">First visible</sp-menu-item>
+        <sp-menu-item disabled>Disabled</sp-menu-item>
+        <sp-menu-item hidden>Hidden</sp-menu-item>
+        <sp-menu-item id="last-visible">Last visible</sp-menu-item>
+      </sp-menu>
+    `);
+    await waitUntil(
+      () => el.childItems.length === 5,
+      'expected menu to manage 5 items'
+    );
+
+    const firstVisible = el.querySelector('#first-visible') as MenuItem;
+    const lastVisible = el.querySelector('#last-visible') as MenuItem;
+
+    el.focus();
+    expect(
+      document.activeElement === firstVisible,
+      'initial focus skips hidden selected item'
+    ).to.be.true;
+
+    await sendKeys({ press: 'ArrowDown' });
+    expect(
+      document.activeElement === lastVisible,
+      'ArrowDown skips hidden and disabled items'
+    ).to.be.true;
+
+    await sendKeys({ press: 'ArrowDown' });
+    expect(
+      document.activeElement === firstVisible,
+      'ArrowDown wraps past hidden selected item'
+    ).to.be.true;
+
+    await sendKeys({ press: 'ArrowUp' });
+    expect(
+      document.activeElement === lastVisible,
+      'ArrowUp wraps past hidden selected item'
+    ).to.be.true;
+  });
+
   it('handle focus and keyboard input', async () => {
     const el = await fixture<Menu>(html`
       <sp-menu>
