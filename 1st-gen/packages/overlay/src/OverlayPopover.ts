@@ -164,6 +164,13 @@ export function OverlayPopover<T extends Constructor<AbstractOverlay>>(
         if (!targetOpenState) {
           return;
         }
+        const focusElement = el.focusElement;
+        if (focusElement) {
+          focusEl = focusElement;
+        }
+        if (focusEl) {
+          return;
+        }
         if (el.matches(userFocusableSelector)) {
           focusEl = el;
         }

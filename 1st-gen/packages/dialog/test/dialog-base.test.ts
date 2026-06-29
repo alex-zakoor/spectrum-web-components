@@ -17,6 +17,7 @@ import {
   fixture,
   html,
   oneEvent,
+  waitUntil,
 } from '@open-wc/testing';
 
 import { TemplateResult } from '@spectrum-web-components/base';
@@ -42,7 +43,7 @@ async function styledFixture<T extends Element>(
 }
 
 const overlayTrigger = (story: () => TemplateResult): TemplateResult => html`
-  <overlay-trigger type="modal">
+  <overlay-trigger type="modal" triggered-by="click">
     <sp-button slot="trigger" variant="primary">Toggle Dialog</sp-button>
     ${story()}
   </overlay-trigger>
@@ -137,5 +138,78 @@ describe('dialog base', () => {
     await elementUpdated(el);
 
     expect(dialog.open).to.be.false;
+  });
+  it('focuses dialog content before footer buttons on open', async () => {
+    const el = await styledFixture<OverlayTrigger>(
+      overlayTrigger(
+        () => html`
+          <sp-dialog-base underlay slot="click-content">
+            <sp-dialog>
+              <h2 slot="heading">Dialog heading</h2>
+              <sp-button id="footer-button" slot="button">
+                Footer button
+              </sp-button>
+              <label>
+                Content input
+                <input id="content-input" />
+              </label>
+            </sp-dialog>
+          </sp-dialog-base>
+        `
+      )
+    );
+    await elementUpdated(el);
+
+    const dialog = el.querySelector('sp-dialog-base') as DialogBase;
+    const footerButton = el.querySelector('#footer-button') as Button;
+    const contentInput = el.querySelector('#content-input') as HTMLInputElement;
+
+    const opened = oneEvent(el, 'sp-opened');
+    el.open = 'click';
+    await opened;
+    await elementUpdated(dialog);
+
+    await waitUntil(
+      () => document.activeElement === contentInput,
+      'content input receives initial focus',
+      { timeout: 300 }
+    );
+
+    expect(document.activeElement).to.equal(contentInput);
+    expect(document.activeElement).to.not.equal(footerButton);
+  });
+  it('falls back to footer buttons when dialog content has no focusable control', async () => {
+    const el = await styledFixture<OverlayTrigger>(
+      overlayTrigger(
+        () => html`
+          <sp-dialog-base underlay slot="click-content">
+            <sp-dialog>
+              <h2 slot="heading">Dialog heading</h2>
+              <sp-button id="footer-button" slot="button">
+                Footer button
+              </sp-button>
+              <p>Dialog content without controls.</p>
+            </sp-dialog>
+          </sp-dialog-base>
+        `
+      )
+    );
+    await elementUpdated(el);
+
+    const dialog = el.querySelector('sp-dialog-base') as DialogBase;
+    const footerButton = el.querySelector('#footer-button') as Button;
+
+    const opened = oneEvent(el, 'sp-opened');
+    el.open = 'click';
+    await opened;
+    await elementUpdated(dialog);
+
+    await waitUntil(
+      () => document.activeElement === footerButton,
+      'footer button receives fallback focus',
+      { timeout: 300 }
+    );
+
+    expect(document.activeElement).to.equal(footerButton);
   });
 });

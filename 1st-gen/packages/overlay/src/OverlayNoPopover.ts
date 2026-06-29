@@ -83,6 +83,13 @@ export function OverlayNoPopover<T extends Constructor<AbstractOverlay>>(
         if (targetOpenState !== true) {
           return;
         }
+        const focusElement = el.focusElement;
+        if (focusElement) {
+          focusEl = focusElement;
+        }
+        if (focusEl) {
+          return;
+        }
         if (el.matches(userFocusableSelector)) {
           focusEl = el;
         }

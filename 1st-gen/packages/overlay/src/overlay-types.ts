@@ -89,6 +89,7 @@ declare global {
 }
 
 export type OpenableElement = HTMLElement & {
+  focusElement?: HTMLElement | null;
   open: boolean;
   tipElement?: HTMLElement;
   updateComplete?: Promise<void>;

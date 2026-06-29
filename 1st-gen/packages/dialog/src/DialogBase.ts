@@ -21,7 +21,10 @@ import {
 import { property } from '@spectrum-web-components/base/src/decorators.js';
 import modalStyles from '@spectrum-web-components/modal/src/modal.css.js';
 import modalWrapperStyles from '@spectrum-web-components/modal/src/modal-wrapper.css.js';
-import { FocusVisiblePolyfillMixin } from '@spectrum-web-components/shared';
+import {
+  FocusVisiblePolyfillMixin,
+  userFocusableSelector,
+} from '@spectrum-web-components/shared';
 import { firstFocusableIn } from '@spectrum-web-components/shared/src/first-focusable-in.js';
 
 import '@spectrum-web-components/button/sp-button.js';
@@ -83,12 +86,40 @@ export class DialogBase extends FocusVisiblePolyfillMixin(SpectrumElement) {
     return dialog || this;
   }
 
+  private get dialogContentFocusElement(): HTMLElement | null {
+    const contentSlot = this.dialog.shadowRoot?.querySelector(
+      'slot:not([name])'
+    ) as HTMLSlotElement | null;
+    const contentElements = contentSlot?.assignedElements({
+      flatten: true,
+    });
+
+    for (const contentElement of contentElements || []) {
+      if (!(contentElement instanceof HTMLElement)) {
+        continue;
+      }
+      if (contentElement.matches(userFocusableSelector)) {
+        return contentElement;
+      }
+      const firstFocusable = firstFocusableIn(contentElement);
+      if (firstFocusable) {
+        return firstFocusable;
+      }
+    }
+
+    return null;
+  }
+
+  public get focusElement(): HTMLElement | null {
+    return this.dialogContentFocusElement || firstFocusableIn(this.dialog);
+  }
+
   public override async focus(): Promise<void> {
     if (this.shadowRoot) {
-      const firstFocusable = firstFocusableIn(this.dialog);
+      const firstFocusable = this.focusElement;
       if (firstFocusable) {
         if ((firstFocusable as SpectrumElement).updateComplete) {
-          await firstFocusable.updateComplete;
+          await (firstFocusable as SpectrumElement).updateComplete;
         }
         firstFocusable.focus();
       } else {
